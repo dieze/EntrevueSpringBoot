@@ -7,6 +7,9 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.H2Dialect
     show-sql: true
+    # because the only endpoints in the app expose fields that are exactly the same as the fields on the ORM entities
+    # we use the entities as dto objects for simplicity and conciseness (no useless dto and mappers)
+    # open-in-view: false is important because it prevents the view (serialization) accessing the database (should be avoided)
     open-in-view: false
     properties:
       hibernate:
