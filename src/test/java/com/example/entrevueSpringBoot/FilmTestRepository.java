@@ -11,4 +11,9 @@ import java.util.Optional;
 public interface FilmTestRepository extends FilmRepository {
 
     Optional<Film> findByTitre(String name); // TODO: is film's titre unique ?
+
+    /**
+     * @see CrudRepository#deleteById
+     */
+    void deleteById(Long id);
 }

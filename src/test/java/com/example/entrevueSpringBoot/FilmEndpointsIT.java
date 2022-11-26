@@ -144,11 +144,25 @@ public class FilmEndpointsIT {
     // but it makes sense to respond 404 for non-existing film
     @Test
     public void getFilm_404() throws Exception {
-        // film id is signed long (unsigned long in Java do not exist)
-        // IDENTITY increment starts at 0
-        // -1 is valid value and will always respond 404 Not Found
+        // let's assume that some other previous test might have written to
+        // the database without rollback ; in this context using a random id
+        // might lead to an existing Film thus responding 200 instead of expected 404
+        //
+        // we won't load the entire database just to know all the ids, to pick one that do
+        // not exist (and if parallel execution, id might have been created meanwhile...)
+        //
+        // negative or zero id might fail if @Min(1) validation is in place
+
+        // black-box 100% safe solution is to create a Film,
+        // remove it from database (using test-only facilities since production do not provide DELETE),
+        // then query the removed Film
+
+        doPostFilm();
+        long[] ids = findIds(); // 3: film & Ford Harrison & Hamill Mark
+        filmTestRepository.deleteById(ids[0]);
+
         mockMvc.perform(
-                get("/api/film/{id}", -1)
+                get("/api/film/{id}", ids[0])
         )
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("")); // empty response body
