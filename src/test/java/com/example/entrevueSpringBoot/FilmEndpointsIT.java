@@ -2,6 +2,8 @@ package com.example.entrevueSpringBoot;
 
 import com.example.entrevueSpringBoot.testhelper.InsertBeforeCommand;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
 import org.springframework.test.web.servlet.MockMvc;
@@ -71,21 +73,21 @@ public class FilmEndpointsIT {
                 // insert id of film
                 String.format("\"id\":%d,", ids[0])
         ).before(
-                // TODO: is film's titre unique ?
-                "\"titre\":\"Star Wars: The Empire Strikes Back\""
-        ).andInsert(
-                // insert id of acteur Ford Harisson
-                String.format("\"id\":%d,", ids[1])
-        ).before(
-                // TODO: is acteur's combination of nom & prenom unique ?
-                "\"nom\":\"Ford\",\"prenom\":\"Harrison\""
-        ).andInsert(
-                // insert id of acteur Hamill Mark
-                String.format("\"id\":%d,", ids[2])
-        ).before(
-                // TODO: is acteur's combination of nom & prenom unique ?
-                "\"nom\":\"Hamill\",\"prenom\":\"Mark\""
-        )
+                        // TODO: is film's titre unique ?
+                        "\"titre\":\"Star Wars: The Empire Strikes Back\""
+                ).andInsert(
+                        // insert id of acteur Ford Harisson
+                        String.format("\"id\":%d,", ids[1])
+                ).before(
+                        // TODO: is acteur's combination of nom & prenom unique ?
+                        "\"nom\":\"Ford\",\"prenom\":\"Harrison\""
+                ).andInsert(
+                        // insert id of acteur Hamill Mark
+                        String.format("\"id\":%d,", ids[2])
+                ).before(
+                        // TODO: is acteur's combination of nom & prenom unique ?
+                        "\"nom\":\"Hamill\",\"prenom\":\"Mark\""
+                )
                 .on(BODY);
     }
 
@@ -117,8 +119,12 @@ public class FilmEndpointsIT {
     private MockMvc mockMvc;
 
     public ResultActions doPostFilm() throws Exception {
+        return doPostFilm(BODY);
+    }
+
+    public ResultActions doPostFilm(String body) throws Exception {
         return mockMvc.perform(
-                post("/api/film").contentType("application/json").content(BODY)
+                post("/api/film").contentType("application/json").content(body)
         );
     }
 
@@ -128,31 +134,102 @@ public class FilmEndpointsIT {
                 .andExpect(status().isCreated()) // 201 Created
                 .andExpect(content().contentType("application/json"))
                 .andExpect(content().json(withIds(findIds()), true))
-                ;
+        ;
     }
 
+    /**
+     * POST same film twice with exact same request body should respond 409 Conflict.
+     * <p>
+     * TODO: is it valid to POST the exact same film twice ?
+     */
     @Test
-    public void postFilm_409() throws Exception {
+    public void postFilm_twiceExactSame_409() throws Exception {
         doPostFilm(); // titre: "Star Wars: The Empire Strikes Back"
         doPostFilm() // titre: "Star Wars: The Empire Strikes Back"
                 .andExpect(status().isConflict()) // 409 Conflict
                 .andExpect(content().contentTypeCompatibleWith("text/plain")) // #contentTypeCompatibleWith -> issue with ";charset=UTF-8"
-                //.andExpect(content().string(org.hamcrest.Matchers.containsString("Unique index or primary key violation"))) // don't uncomment ; help for dev must not be tested
-                ;
+        //.andExpect(content().string(org.hamcrest.Matchers.containsString("Unique index or primary key violation"))) // don't uncomment ; help for dev must not be tested
+        ;
+    }
+
+    /**
+     * POST same film twice but with different acteurs should respond 409 Conflict.
+     * <p>
+     * Assumption: POST film can't be used to add/change a film's acteurs. This would be the responsibility of a PUT film.
+     * <p>
+     * TODO: can we change an existing film's acteurs on POST film ?
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource
+    public void postFilm_twiceDifferentActeurs_409(String testCaseName, String toReplace, String replacement) throws Exception {
+        doPostFilm(); // first POST film
+        long[] ids = findIds();
+
+        // trying to change film's acteurs
+        doPostFilm(BODY.replace(toReplace, replacement))
+                .andExpect(status().isConflict())
+                .andExpect(content().contentTypeCompatibleWith("text/plain")) // #contentTypeCompatibleWith -> issue with ";charset=UTF-8"
+        ;
+
+        expectDefaultFilm(ids); // unchanged from first POST film
+    }
+
+    static Object[][] postFilm_twiceDifferentActeurs_409() {
+        return new Object[][]{
+                // testCaseName, toReplace, replacement
+                new String[]{
+                        "No acteur (absent)", // i.e. removing film's acteurs?
+                        ",\"acteurs\":[{\"nom\":\"Ford\",\"prenom\":\"Harrison\"},{\"nom\":\"Hamill\",\"prenom\":\"Mark\"}]",
+                        "",
+                },
+                new String[]{
+                        "No acteur (null)", // i.e. removing film's acteurs?
+                        ",\"acteurs\":[{\"nom\":\"Ford\",\"prenom\":\"Harrison\"},{\"nom\":\"Hamill\",\"prenom\":\"Mark\"}]",
+                        ",\"acteurs\":null",
+                },
+                new String[]{
+                        "No acteur (empty)",// i.e. removing film's acteurs?
+                        ",\"acteurs\":[{\"nom\":\"Ford\",\"prenom\":\"Harrison\"},{\"nom\":\"Hamill\",\"prenom\":\"Mark\"}]",
+                        ",\"acteurs\":[]",
+                },
+                new String[]{
+                        "Only the first acteur",// i.e. replacing film's acteurs?
+                        ",\"acteurs\":[{\"nom\":\"Ford\",\"prenom\":\"Harrison\"},{\"nom\":\"Hamill\",\"prenom\":\"Mark\"}]",
+                        ",\"acteurs\":[{\"nom\":\"Ford\",\"prenom\":\"Harrison\"}]",
+                },
+                new String[]{
+                        "A single different acteur",// i.e. replacing film's acteurs?
+                        ",\"acteurs\":[{\"nom\":\"Ford\",\"prenom\":\"Harrison\"},{\"nom\":\"Hamill\",\"prenom\":\"Mark\"}]",
+                        ",\"acteurs\":[{\"nom\":\"Fisher\",\"prenom\":\"Carrie\"}]",
+                },
+                new String[]{
+                        "Film's acteurs plus a new one",// i.e. adding a new acteur?
+                        ",\"acteurs\":[{\"nom\":\"Ford\",\"prenom\":\"Harrison\"},{\"nom\":\"Hamill\",\"prenom\":\"Mark\"}]",
+                        ",\"acteurs\":[{\"nom\":\"Ford\",\"prenom\":\"Harrison\"},{\"nom\":\"Hamill\",\"prenom\":\"Mark\"}" +
+                                ",{\"nom\":\"Fisher\",\"prenom\":\"Carrie\"}" +
+                                "]",
+                },
+        };
     }
 
     @Test
     public void getFilm_200() throws Exception {
         doPostFilm();
         long[] ids = findIds();
+        expectDefaultFilm(ids);
+    }
 
+    /**
+     * @see #BODY the default film
+     */
+    private void expectDefaultFilm(long[] ids) throws Exception {
         mockMvc.perform(
-                get("/api/film/{id}", ids[0])
-        )
+                        get("/api/film/{id}", ids[0])
+                )
                 .andExpect(status().isOk())
                 .andExpect(content().contentType("application/json"))
                 .andExpect(content().json(withIds(ids), true))
-                ;
+        ;
     }
 
     // not specified on the instructions
@@ -177,8 +254,8 @@ public class FilmEndpointsIT {
         filmTestRepository.deleteById(ids[0]);
 
         mockMvc.perform(
-                get("/api/film/{id}", ids[0])
-        )
+                        get("/api/film/{id}", ids[0])
+                )
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("")); // empty response body
     }
