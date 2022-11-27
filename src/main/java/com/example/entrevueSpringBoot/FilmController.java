@@ -10,14 +10,11 @@ public class FilmController {
 
     private final FilmRepository repository;
 
-    /**
-     * @see NullAsNotFoundResponseBodyAdvice about returning null
-     */
     @GetMapping("/api/film/{id}")
     public Film getFilm(@PathVariable long id) { // @PathVariable required, long never null
         // two steps for debugging purposes
         //noinspection UnnecessaryLocalVariable
-        Film film = repository.findById(id).orElse(null);
+        Film film = repository.getById(id);
         return film;
     }
 

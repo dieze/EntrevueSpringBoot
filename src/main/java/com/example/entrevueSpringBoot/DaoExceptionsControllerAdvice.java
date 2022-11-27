@@ -5,10 +5,9 @@ import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /**
  * Controller advice for handling DAO exceptions.
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
  * @see SqlExceptionHelper#logExceptions
  * @see ResultSetReturnImpl#executeUpdate that logs SQLException for update method
  */
-@ControllerAdvice
+@RestControllerAdvice
 public class DaoExceptionsControllerAdvice {
 
     /**
@@ -29,7 +28,6 @@ public class DaoExceptionsControllerAdvice {
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     @ResponseStatus(HttpStatus.CONFLICT)
-    @ResponseBody
     public String handle(DataIntegrityViolationException e) {
         //if (production environment)
         //return ""; // do not propagate security-sensible information to caller

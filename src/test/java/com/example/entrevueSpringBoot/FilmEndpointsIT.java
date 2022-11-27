@@ -257,6 +257,15 @@ public class FilmEndpointsIT {
                         get("/api/film/{id}", ids[0])
                 )
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("")); // empty response body
+                .andExpect(content().json(
+                        // @formatter:off
+                        // language=json
+                        "{" +
+                            "\"film not found\":{" +
+                                "\"id\":" + ids[0] +
+                            "}" +
+                        "}"
+                        // @formatter:on
+                ));
     }
 }
