@@ -1,12 +1,14 @@
 package com.example.entrevueSpringBoot;
 
 import org.springframework.data.repository.CrudRepository;
-import org.springframework.data.repository.Repository;
+import org.springframework.data.repository.RepositoryDefinition;
+import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
-@org.springframework.stereotype.Repository
-public interface FilmRepository extends Repository<Film, Long> {
+@Repository
+@RepositoryDefinition(domainClass = Film.class, idClass = Long.class)
+public interface FilmRepository {
 
     /**
      * @see CrudRepository#save
