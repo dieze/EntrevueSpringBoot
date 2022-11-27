@@ -1,5 +1,6 @@
 package com.example.entrevueSpringBoot;
 
+import com.example.entrevueSpringBoot.testhelper.InsertBeforeCommand;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.transaction.TransactionalTestExecutionListener;
@@ -9,6 +10,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import javax.transaction.Transactional;
 import java.util.Arrays;
 
+import static com.example.entrevueSpringBoot.testhelper.InsertBeforeCommand.insert;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -34,44 +36,57 @@ public class FilmEndpointsIT {
      */
     //language=json
     private static final String BODY =
-            "" + // <- quick-fix to avoid IntelliJ formatter making a mess
-                    "{\n" + // id will be inserted here based on titre TODO: is film's titre unique ?
-                    "  \"titre\":\"Star Wars: The Empire Strikes Back\",\n" +
-                    "  \"description\":\"Darth Vader is adamant about turning Luke Skywalker to the dark side.\",\n" +
-                    "  \"acteurs\":[\n" +
-                    "    {\n" + // id will be inserted here based on nom & prenom TODO: is acteur's combination of nom & prenom unique ?
-                    "      \"nom\":\"Ford\",\n" +
-                    "      \"prenom\":\"Harrison\"\n" +
-                    "    },\n" +
-                    "    {\n" + // id will be inserted here based on nom & prenom TODO: is acteur's combination of nom & prenom unique ?
-                    "      \"nom\":\"Hamill\",\n" +
-                    "      \"prenom\":\"Mark\"\n" +
-                    "    }\n" +
-                    "  ]\n" +
-                    "}";
+            //
+            // IntelliJ: Please turn formatter markers on!
+            // Preferences -> Editor -> Code Style -> Formatter -> Turn formatter on/off with markers in code comments
+            //
+            // @formatter:off
+            //
+            // most compact style to ease search-replace
+            // no space around these following JSON structure characters {}[]:,
+            // no indent in JSON payload
+            // no newline
+            "{" +
+                // id will be inserted here based on titre TODO: is film's titre unique ?
+                "\"titre\":\"Star Wars: The Empire Strikes Back\"," +
+                "\"description\":\"Darth Vader is adamant about turning Luke Skywalker to the dark side.\"," +
+                "\"acteurs\":[" +
+                    "{" + // id will be inserted here based on nom & prenom TODO: is acteur's combination of nom & prenom unique ?
+                        "\"nom\":\"Ford\"," +
+                        "\"prenom\":\"Harrison\"" +
+                    "}," +
+                    "{" + // id will be inserted here based on nom & prenom TODO: is acteur's combination of nom & prenom unique ?
+                        "\"nom\":\"Hamill\"," +
+                        "\"prenom\":\"Mark\"" +
+                    "}" +
+                "]" +
+            "}";
+            // @formatter:on
 
+    /**
+     * @see InsertBeforeCommand
+     */
     private static String withIds(long[] ids) { // 3: film & Ford Harrison & Hamill Mark
-        // insert id of film
-        // TODO: is film's titre unique ?
-        String anchor = "  \"titre\":\"Star Wars: The Empire Strikes Back\",\n";
-        if (!BODY.contains(anchor)) throw new RuntimeException(); // fail-safe
-        String withIds = BODY.replace(anchor, String.format("  \"id\":%d,\n", ids[0]) + anchor);
-
-        // insert id of acteur Ford Harrison
-        // TODO: is acteur's combination of nom & prenom unique ?
-        anchor = "      \"nom\":\"Ford\",\n";
-        anchor += "      \"prenom\":\"Harrison\"\n";
-        if (!BODY.contains(anchor)) throw new RuntimeException(); // fail-safe
-        withIds = withIds.replace(anchor, String.format("      \"id\":%d,\n", ids[1]) + anchor);
-
-        // insert id of acteur Hamill Mark
-        // TODO: is acteur's combination of nom & prenom unique ?
-        anchor = "      \"nom\":\"Hamill\",\n";
-        anchor += "      \"prenom\":\"Mark\"\n";
-        if (!BODY.contains(anchor)) throw new RuntimeException(); // fail-safe
-        withIds = withIds.replace(anchor, String.format("      \"id\":%d,\n", ids[2]) + anchor);
-
-        return withIds;
+        return insert(
+                // insert id of film
+                String.format("\"id\":%d,", ids[0])
+        ).before(
+                // TODO: is film's titre unique ?
+                "\"titre\":\"Star Wars: The Empire Strikes Back\""
+        ).andInsert(
+                // insert id of acteur Ford Harisson
+                String.format("\"id\":%d,", ids[1])
+        ).before(
+                // TODO: is acteur's combination of nom & prenom unique ?
+                "\"nom\":\"Ford\",\"prenom\":\"Harrison\""
+        ).andInsert(
+                // insert id of acteur Hamill Mark
+                String.format("\"id\":%d,", ids[2])
+        ).before(
+                // TODO: is acteur's combination of nom & prenom unique ?
+                "\"nom\":\"Hamill\",\"prenom\":\"Mark\""
+        )
+                .on(BODY);
     }
 
     @Autowired
