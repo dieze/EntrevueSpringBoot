@@ -35,6 +35,7 @@ public class FilmEndpointsIT {
     //language=json
     private static final String BODY =
             "" + // <- quick-fix to avoid IntelliJ formatter making a mess
+                    // no space around ":" please! it is used in search-replace
                     "{\n" + // id will be inserted here based on titre TODO: is film's titre unique ?
                     "  \"titre\":\"Star Wars: The Empire Strikes Back\",\n" +
                     "  \"description\":\"Darth Vader is adamant about turning Luke Skywalker to the dark side.\",\n" +
@@ -102,8 +103,12 @@ public class FilmEndpointsIT {
     private MockMvc mockMvc;
 
     private ResultActions doPostFilm() throws Exception {
+        return doPostFilm(BODY);
+    }
+
+    private ResultActions doPostFilm(String body) throws Exception {
         return mockMvc.perform(
-                post("/api/film").contentType("application/json").content(BODY)
+                post("/api/film").contentType("application/json").content(body)
         );
     }
 
@@ -123,6 +128,16 @@ public class FilmEndpointsIT {
                 .andExpect(status().isConflict()) // 409 Conflict
                 .andExpect(content().contentTypeCompatibleWith("text/plain")) // #contentTypeCompatibleWith -> issue with ";charset=UTF-8"
                 //.andExpect(content().string(org.hamcrest.Matchers.containsString("Unique index or primary key violation"))) // don't uncomment ; help for dev must not be tested
+                ;
+    }
+
+    @Test
+    public void postFilm_400() throws Exception {
+        doPostFilm(BODY
+                .replace("\"titre\":\"Star Wars: The Empire Strikes Back\",","")
+                .replace("\"nom\":\"Ford\",", "")
+        )
+                .andExpect(status().isBadRequest())
                 ;
     }
 

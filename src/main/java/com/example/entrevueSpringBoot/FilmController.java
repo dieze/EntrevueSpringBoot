@@ -2,7 +2,11 @@ package com.example.entrevueSpringBoot;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import javax.validation.Valid;
+import javax.validation.constraints.Min;
 
 @RestController
 @RequiredArgsConstructor
@@ -23,7 +27,7 @@ public class FilmController {
 
     @PostMapping("/api/film")
     @ResponseStatus(HttpStatus.CREATED)
-    public Film postFilm(@RequestBody Film film) {
+    public Film postFilm(@Valid @RequestBody Film film) {
         // two steps for debugging purposes
         //noinspection UnnecessaryLocalVariable
         Film saved = repository.save(film);

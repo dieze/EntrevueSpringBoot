@@ -4,6 +4,9 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import javax.validation.Valid;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import java.util.List;
 
 import static javax.persistence.CascadeType.*;
@@ -19,10 +22,12 @@ import static javax.persistence.FetchType.EAGER;
 public class Film {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // no @NotNull : IDENTITY can be null on insert
     private Long id;
 
+    @NotBlank
     private String titre;
+
     private String description;
 
     @OneToMany(cascade = {
@@ -48,5 +53,6 @@ public class Film {
     //
     // -> acteur table has foreign key "film_id"
     @JoinColumn(name="film_id")
-    private List<FilmActeur> acteurs;
+    @Valid
+    private List<@NotNull FilmActeur> acteurs;
 }

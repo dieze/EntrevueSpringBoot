@@ -4,6 +4,8 @@ import lombok.Getter;
 import lombok.Setter;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 
 @Entity(name = "acteur")
 // TODO: is acteur's combination of nom & prenom unique ?
@@ -15,8 +17,12 @@ import javax.persistence.*;
 public class FilmActeur {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.IDENTITY) // no @NotNull : IDENTITY can be null on insert
     private Long id;
+
+    @NotBlank
     private String nom;
+
+    @NotBlank
     private String prenom;
 }
