@@ -1,5 +1,7 @@
 package com.example.entrevueSpringBoot;
 
+import com.example.entrevueSpringBoot.acteur.Acteur;
+import com.example.entrevueSpringBoot.film.Film;
 import org.hibernate.engine.jdbc.internal.ResultSetReturnImpl;
 import org.hibernate.engine.jdbc.spi.SqlExceptionHelper;
 import org.hibernate.exception.ConstraintViolationException;
@@ -22,7 +24,7 @@ public class DaoExceptionsControllerAdvice {
 
     /**
      * @see Film unique constraint on titre
-     * @see FilmActeur unique constraint on combination of nom & prenom
+     * @see Acteur unique constraint on combination of nom & prenom
      * TODO: is film's titre unique ?
      * TODO: is acteur's combination of nom & prenom unique ?
      */

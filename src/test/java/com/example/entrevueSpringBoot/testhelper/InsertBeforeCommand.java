@@ -2,6 +2,7 @@ package com.example.entrevueSpringBoot.testhelper;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.experimental.FieldDefaults;
 
 import java.util.ArrayList;
@@ -43,6 +44,7 @@ public class InsertBeforeCommand {
     @FieldDefaults(makeFinal = true, level = AccessLevel.PRIVATE)
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     public static class InsertingBefore {
+        @Getter // TODO: new usage... needs better API for modifying previousCommands
         List<InsertingBefore> previousCommands;
         String toInsert;
         String before;

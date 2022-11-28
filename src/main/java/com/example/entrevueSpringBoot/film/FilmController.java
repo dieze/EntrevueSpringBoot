@@ -1,4 +1,4 @@
-package com.example.entrevueSpringBoot;
+package com.example.entrevueSpringBoot.film;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

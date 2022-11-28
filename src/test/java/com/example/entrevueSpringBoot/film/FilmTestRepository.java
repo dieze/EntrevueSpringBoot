@@ -1,16 +1,14 @@
-package com.example.entrevueSpringBoot;
+package com.example.entrevueSpringBoot.film;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.RepositoryDefinition;
 import org.springframework.stereotype.Repository;
 
-import java.util.Optional;
-
 @Repository
 @RepositoryDefinition(domainClass = Film.class, idClass = Long.class)
 public interface FilmTestRepository {
 
-    Optional<Film> findByTitre(String name); // TODO: is film's titre unique ?
+    Film getByTitre(String name); // TODO: is film's titre unique ?
 
     /**
      * @see CrudRepository#deleteById

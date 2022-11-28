@@ -1,5 +1,6 @@
-package com.example.entrevueSpringBoot;
+package com.example.entrevueSpringBoot.film;
 
+import com.example.entrevueSpringBoot.acteur.Acteur;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -25,13 +26,14 @@ public class Film {
     private String titre;
     private String description;
 
-    @OneToMany(cascade = {
-            // ALL:
+    // TODO: can an acteur play in many films ?
+    @ManyToMany(cascade = {
             PERSIST,MERGE,REFRESH,DETACH,
-            REMOVE
-            // TODO: do we want to remove an acteur when removing a film ?
-            // there is no endpoint for managing acteurs and creating
-            // an acteur is through POST film so it seems like, yes
+            //REMOVE // TODO: do we want to remove an acteur when removing a film ?
+            // nothing is specified on the instructions!
+            // we decided on a many-to-many relationship between film and acteur, i.e.
+            // a film has many acteurs, an acteur can play on many films
+            // so it does not make sense to remove an acteur when a film is removed...
     },
             // there is only one endpoint in the app
             // and it returns a film & its acteurs
@@ -51,15 +53,10 @@ public class Film {
             // by mapping to a dto) in order to avoid the LazyInitializationException
             fetch = EAGER
     )
-    // TODO: can an acteur only play in one film ?
-    // nothing is specified on the instructions!
-    //
-    // There is no dedicated endpoints for managing acteurs
-    // acteurs are created on POST film so "an acteur can only play in one film"
-    // is simpler because on POST film we don't have to figure-out if the acteurs
-    // already exist or not
-    //
-    // -> acteur table has foreign key "film_id"
-    @JoinColumn(name="film_id")
-    private List<FilmActeur> acteurs;
+    @JoinTable(// TODO: can an acteur play in many films ?
+            name = "acteurs_films", // convention: alphanumeric ("acteurs" first, then "films") & plural
+            joinColumns = @JoinColumn(name = "film_id"),
+            inverseJoinColumns = @JoinColumn(name = "acteur_id")
+    )
+    private List<Acteur> acteurs;
 }

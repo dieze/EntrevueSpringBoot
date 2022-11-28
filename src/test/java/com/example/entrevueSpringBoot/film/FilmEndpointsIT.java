@@ -1,5 +1,7 @@
-package com.example.entrevueSpringBoot;
+package com.example.entrevueSpringBoot.film;
 
+import com.example.entrevueSpringBoot.IntegrationTest;
+import com.example.entrevueSpringBoot.acteur.Acteur;
 import com.example.entrevueSpringBoot.testhelper.InsertBeforeCommand;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -11,6 +13,7 @@ import org.springframework.test.web.servlet.ResultActions;
 
 import javax.transaction.Transactional;
 import java.util.Arrays;
+import java.util.List;
 
 import static com.example.entrevueSpringBoot.testhelper.InsertBeforeCommand.insert;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -66,29 +69,34 @@ public class FilmEndpointsIT {
             // @formatter:on
 
     /**
+     * Intermediate state: all the id inserts command to be applied for the default {@link #BODY}.
+     *
      * @see InsertBeforeCommand
      */
-    private static String withIds(long[] ids) { // 3: film & Ford Harrison & Hamill Mark
+    private static InsertBeforeCommand.InsertingBefore insertsForIds(long[] ids) { // 3: film & Ford Harrison & Hamill Mark
         return insert(
                 // insert id of film
                 String.format("\"id\":%d,", ids[0])
         ).before(
-                        // TODO: is film's titre unique ?
-                        "\"titre\":\"Star Wars: The Empire Strikes Back\""
-                ).andInsert(
-                        // insert id of acteur Ford Harisson
-                        String.format("\"id\":%d,", ids[1])
-                ).before(
-                        // TODO: is acteur's combination of nom & prenom unique ?
-                        "\"nom\":\"Ford\",\"prenom\":\"Harrison\""
-                ).andInsert(
-                        // insert id of acteur Hamill Mark
-                        String.format("\"id\":%d,", ids[2])
-                ).before(
-                        // TODO: is acteur's combination of nom & prenom unique ?
-                        "\"nom\":\"Hamill\",\"prenom\":\"Mark\""
-                )
-                .on(BODY);
+                // TODO: is film's titre unique ?
+                "\"titre\":\"Star Wars: The Empire Strikes Back\""
+        ).andInsert(
+                // insert id of acteur Ford Harisson
+                String.format("\"id\":%d,", ids[1])
+        ).before(
+                // TODO: is acteur's combination of nom & prenom unique ?
+                "\"nom\":\"Ford\",\"prenom\":\"Harrison\""
+        ).andInsert(
+                // insert id of acteur Hamill Mark
+                String.format("\"id\":%d,", ids[2])
+        ).before(
+                // TODO: is acteur's combination of nom & prenom unique ?
+                "\"nom\":\"Hamill\",\"prenom\":\"Mark\""
+        );
+    }
+
+    private static String withIds(long[] ids) { // 3: film & Ford Harrison & Hamill Mark (for default BODY)
+        return insertsForIds(ids).on(BODY);
     }
 
     @Autowired
@@ -97,14 +105,13 @@ public class FilmEndpointsIT {
     private long[] findIds() { // 3: film & Ford Harrison & Hamill Mark
         Long[] ids = new Long[3]; // Long[] might have null
         // TODO: is film's titre unique ?
-        //noinspection OptionalGetWithoutIsPresent ; let it fail!
-        Film film = filmTestRepository.findByTitre("Star Wars: The Empire Strikes Back").get();
+        Film film = filmTestRepository.getByTitre("Star Wars: The Empire Strikes Back");
         ids[0] = film.getId();
         assertNotNull(ids[0], "null id for film");
 
         // TODO: is acteur's combination of nom & prenom unique ?
 
-        for (FilmActeur acteur : film.getActeurs()) {
+        for (Acteur acteur : film.getActeurs()) {
             if ("Ford".equals(acteur.getNom()) && "Harrison".equals(acteur.getPrenom())) ids[1] = acteur.getId();
             if ("Hamill".equals(acteur.getNom()) && "Mark".equals(acteur.getPrenom())) ids[2] = acteur.getId();
         }
@@ -210,6 +217,42 @@ public class FilmEndpointsIT {
                                 "]",
                 },
         };
+    }
+
+    /**
+     * POST a new film with existing acteurs should reuse acteurs from database.
+     * <p>
+     * This is a requirement, since Acteur's combination of nom & prenom is unique.
+     * TODO: is acteur's combination of nom & prenom unique ?
+     */
+    @Test
+    public void postFilm_newFilmWithExistingActeurs() throws Exception {
+        // POST default film
+        doPostFilm();
+        long[] ids = findIds(); // 3: The Empire Strikes Back & Ford Harrison & Hamill Mark
+
+        // TODO: is film's titre unique ?
+        String newFilm = BODY.replace(
+                "\"titre\":\"Star Wars: The Empire Strikes Back\"",
+                "\"titre\":\"Star Wars: Return of the Jedi\""
+        );
+
+        ResultActions result = doPostFilm(newFilm)
+                .andExpect(status().isCreated());
+
+        // customize id insertions for new title
+        ids[0] = filmTestRepository.getByTitre("Star Wars: Return of the Jedi").getId();
+        InsertBeforeCommand.InsertingBefore filmIdInsert = InsertBeforeCommand.insert(
+                String.format("\"id\":%d,", ids[0])
+        ).before(
+                "\"titre\":\"Star Wars: Return of the Jedi\""
+        ); // has previousCommands = new ArrayList<>()
+        InsertBeforeCommand.InsertingBefore inserts = insertsForIds(ids);
+        List<InsertBeforeCommand.InsertingBefore> commands = inserts.getPreviousCommands(); // same instance
+        commands.remove(0); // default film's id insert
+        commands.add(0, filmIdInsert); // TODO: beware! issue with previousCommands when replacing a command
+
+        result.andExpect(content().string(inserts.on(newFilm)));
     }
 
     @Test

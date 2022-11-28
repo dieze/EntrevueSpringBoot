@@ -1,4 +1,4 @@
-package com.example.entrevueSpringBoot;
+package com.example.entrevueSpringBoot.acteur;
 
 import lombok.Getter;
 import lombok.Setter;
@@ -12,7 +12,7 @@ import javax.persistence.*;
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"nom", "prenom"}))
 @Getter
 @Setter
-public class FilmActeur {
+public class Acteur {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
