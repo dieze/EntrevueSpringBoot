@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
+import java.sql.SQLException;
+
 /**
  * Controller advice for handling DAO exceptions.
  *
@@ -31,10 +33,16 @@ public class DaoExceptionsControllerAdvice {
     @ResponseStatus(HttpStatus.CONFLICT)
     @ResponseBody
     public String handle(DataIntegrityViolationException e) {
-        //if (production environment)
-        //return ""; // do not propagate security-sensible information to caller
+        // vendor-specific code
+        ConstraintViolationException constraintException = (ConstraintViolationException) e.getCause(); // spring -> hibernate
+        SQLException sqlException = constraintException.getSQLException(); // hibernate -> JDK
 
-        // spring -> hibernate ; hibernate specific code
+        if (!sqlException.getMessage().contains("Unique index or primary key violation")) {
+            throw e; // sorry, can only process unique constraint violation
+        }
+
+        "Unique index or primary key violation: \"PUBLIC.UK4SS6BMOSO9FGRIIED36YKO3OY_INDEX_2 ON PUBLIC.FILM(TITRE) VALUES 1\"
+
         return ((ConstraintViolationException) e.getCause()).getSQLException().getMessage(); // useful message for devs
     }
 }
